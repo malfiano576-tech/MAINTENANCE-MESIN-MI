@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monitoring Maintenance Mesin</title>
+<style>
+:root{--navy:#142b3b;--green:#176b55;--gold:#c6a45b;--bg:#f3f5f4;--ink:#20313a;--muted:#6b7b80;--line:#dce4e1;--white:#fff;--red:#b63b36;--orange:#b56b18}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font:14px/1.5 Arial,sans-serif;color:var(--ink)}
+header{background:linear-gradient(120deg,var(--navy),#205b4d);color:#fff;padding:22px 24px}
+.head{max-width:1200px;margin:auto;display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap}
+h1{font-size:22px;margin:0 0 4px;letter-spacing:.5px}.sub{color:#d4e2dc;font-size:13px}
+.wrap{max-width:1200px;margin:20px auto;padding:0 16px}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+nav button,.btn{border:0;border-radius:8px;padding:10px 14px;background:#e3eae7;color:var(--navy);font-weight:700;cursor:pointer}
+nav button.active,.btn.primary{background:var(--green);color:#fff}.btn.gold{background:var(--gold);color:#182c32}.btn.danger{background:#f8e5e3;color:var(--red)}
+.card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:17px;margin-bottom:15px;box-shadow:0 3px 12px #18392a0a}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:170px}
+label{font-size:12px;font-weight:700;color:#52636a}input,select,textarea{width:100%;padding:10px;border:1px solid #cbd7d2;border-radius:7px;background:#fff;color:var(--ink);font:inherit}
+textarea{min-height:66px;resize:vertical}.section-title{font-size:16px;color:var(--navy);font-weight:800;margin:0 0 12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:15px}.stat{background:#fff;padding:14px;border-radius:10px;border:1px solid var(--line)}.stat b{display:block;font-size:22px;color:var(--green)}.stat span{font-size:12px;color:var(--muted)}
+.machine-tabs{display:flex;gap:8px;margin-bottom:14px}.machine-tabs button{flex:1;padding:12px;border:1px solid var(--line);background:#fff;border-radius:8px;font-weight:800;cursor:pointer}.machine-tabs button.active{background:#e2eee9;border:2px solid var(--green);color:var(--green)}
+.item{border:1px solid var(--line);border-radius:9px;padding:13px;margin:9px 0}.item-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.item-name{font-weight:800}.choices{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0}.choice{padding:7px 11px;border-radius:20px;border:1px solid #cbd7d2;background:#fff;cursor:pointer;font-size:12px;font-weight:700}.choice.selected.ok{background:#e3f3eb;border-color:#70b79a;color:#176b55}.choice.selected.issue{background:#fff0df;border-color:#e2ad65;color:#98530c}.choice.selected.pending{background:#fbe7e5;border-color:#d68b84;color:#a3322c}
+.item input,.item textarea{margin-top:7px}.tag{display:inline-block;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:800}.tag.ok{background:#e3f3eb;color:#176b55}.tag.due{background:#ffedda;color:#9b570b}.tag.late{background:#fbe7e5;color:#a3322c}
+.hidden{display:none!important}.muted{color:var(--muted)}.small{font-size:12px}.list-row{padding:11px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.project{border-left:4px solid var(--gold);padding:10px 12px;background:#faf8f1;border-radius:6px;margin:8px 0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.empty{padding:20px;text-align:center;color:var(--muted)}
+footer{text-align:center;color:#82918e;font-size:11px;padding:15px}
+@media(max-width:650px){header{padding:18px 15px}.stats{grid-template-columns:repeat(2,1fr)}.wrap{padding:0 10px;margin-top:12px}.card{padding:13px}.machine-tabs button{font-size:12px;padding:10px 5px}.item-head{align-items:flex-start}}
+
+/* Android responsive layout and touch controls */
+html{-webkit-text-size-adjust:100%}body{min-width:320px;padding-bottom:env(safe-area-inset-bottom)}
+button,select,input,textarea{font-size:16px}button,.choice{touch-action:manipulation}
+.dashboard-machine{cursor:pointer;transition:background .15s;padding:12px 10px;border:1px solid transparent;border-radius:10px;margin:3px 0}
+.dashboard-machine:active,.dashboard-machine:hover{background:#edf5f0;border-color:#cbded4}
+.machine-group-title{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 2px 5px;border-bottom:1px solid var(--line);margin-top:12px}
+.machine-group-title span{font-size:12px;color:var(--muted)}
+.machine-open{font-size:12px;color:var(--green);font-weight:800;white-space:nowrap}
+@media(max-width:700px){
+ header{padding:16px 13px}.head{display:block}h1{font-size:18px;line-height:1.3}#today{margin-top:7px}
+ .wrap{margin:10px auto;padding:0 9px}
+ nav#mainNav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;position:sticky;top:0;z-index:20;background:var(--bg);padding:7px 0}
+ nav button{min-height:44px;padding:9px 6px;font-size:12px;line-height:1.25}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.stat{padding:11px}.stat b{font-size:20px}.stat span{font-size:11px;display:block}
+ .card{padding:12px;border-radius:11px;margin-bottom:11px}.section-title{font-size:15px}
+ .row{display:grid;grid-template-columns:1fr;gap:10px;align-items:stretch}.field{min-width:0;width:100%}
+ input,select,textarea{min-height:44px;padding:10px 11px;border-radius:9px}textarea{min-height:78px}
+ .machine-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.machine-tabs button{min-height:48px;font-size:12px;padding:8px 5px}
+ .item{padding:11px;margin:8px 0}.item-head{align-items:flex-start}
+ .choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.choice{padding:10px 4px;min-height:42px;font-size:11px}
+ .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions .btn{min-height:44px;padding:10px 7px;font-size:13px}.actions select{grid-column:1/-1}
+ .list-row{align-items:flex-start;padding:12px 2px}.list-row>div{min-width:0;flex:1}.list-row .tag{max-width:48%;white-space:normal;text-align:center}
+ #projectFilter{max-width:none!important;width:100%}#recordList .item p{overflow-wrap:anywhere}footer{padding:18px 8px}
+}
+@media(max-width:380px){.choices{grid-template-columns:1fr}.actions{grid-template-columns:1fr}.stats{gap:6px}.stat b{font-size:18px}}
+
+
+.unit-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.unit-pick{border:1px solid var(--line);background:#fff;color:var(--navy);border-radius:9px;padding:12px 7px;min-height:48px;font-weight:800;cursor:pointer}
+.unit-pick.active{background:#e2eee9;border:2px solid var(--green);color:var(--green)}
+@media(max-width:700px){.unit-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.unit-pick{min-height:48px;font-size:13px;padding:10px 5px}}
+
+</style>
+</head>
+<body>
+<header><div class="head"><div><h1>MONITORING MAINTENANCE MESIN</h1><div class="sub">LUNCH BOX & MESIN SEKAT · Checklist, jadwal blower, project dan persiapan sparepart</div></div><div><div id="today" class="sub"></div><div id="cloudStatus" class="sub" style="margin-top:5px">☁ Menghubungkan Supabase...</div></div></div></header>
+<div class="wrap">
+<nav id="mainNav">
+<button class="active" data-page="dashboard">Dashboard</button>
+<button data-page="inspection">Pemeriksaan Mesin</button>
+<button data-page="projects">Project Maintenance Selanjutnya</button>
+<button data-page="supplies">Barang yang Harus Disiapkan</button>
+<button data-page="records">Riwayat Pemeriksaan</button>
+</nav>
+<section id="dashboard" class="page">
+<div class="stats">
+<div class="stat"><b id="countRepair">0</b><span>Unit Mesin Perbaikan</span></div>
+<div class="stat"><b id="countNot">0</b><span>Unit Belum Maintenance</span></div>
+<div class="stat"><b id="countDone">0</b><span>Unit Sudah Maintenance</span></div>
+<div class="stat"><b id="countBlower">0</b><span>Blower Jatuh Tempo</span></div>
+</div>
+<div class="card"><h2 class="section-title">Status Mesin</h2><div id="dashboardMachines"></div></div>
+<div class="card"><h2 class="section-title">Pengingat Kebersihan Blower</h2><div id="blowerAlerts"></div></div>
+<div class="card"><h2 class="section-title">Project Maintenance Berikutnya</h2><div id="dashboardProjects"></div></div>
+</section>
+<section id="inspection" class="page hidden">
+<div class="machine-tabs" style="flex-wrap:wrap"><button class="active" data-machine="LUNCH BOX">LUNCH BOX (11)</button><button data-machine="FORMING BOX">FORMING BOX (3)</button><button data-machine="FORMING TRAY">FORMING TRAY (2)</button><button data-machine="FORMING EREKTING">FORMING EREKTING (1)</button><button data-machine="MESIN SEKAT">MESIN SEKAT (5)</button><button data-machine="DEBAO">DEBAO (1)</button><button data-machine="RUIDA">RUIDA (2)</button><button data-machine="MINGGUO">MINGGUO (4)</button></div>
+<div class="card" style="padding:12px"><div class="section-title">DAFTAR UNIT MESIN</div><div id="machineUnitList" class="unit-grid"></div><input type="hidden" id="machineUnit"></div>
+<div class="card">
+<div class="row">
+<div class="field"><label>TANGGAL PEMERIKSAAN</label><input type="date" id="inspectDate"></div>
+<div class="field"><label>STATUS MESIN</label><select id="machineStatus"><option>Belum Maintenance</option><option>Sudah Maintenance</option><option>Perbaikan</option></select></div>
+<div class="field"><label>NAMA / NOMOR MESIN</label><input id="machineName" placeholder="Contoh: Lunch Box 1"></div>
+</div>
+<p class="small muted">Pilih status setiap pemeriksaan secara langsung. Isi keterangan kondisi dan catatan jika ada pekerjaan yang tertunda.</p>
+<div id="checklist"></div>
+<div class="card" style="background:#f7faf8;margin-top:15px">
+<h3 class="section-title">Kebersihan Blower · Setiap 3 Bulan</h3>
+<div class="row">
+<div class="field"><label>TANGGAL TERAKHIR DIBERSIHKAN</label><input type="date" id="blowerDate"></div>
+<div class="field"><label>JADWAL BERIKUTNYA</label><input id="blowerDue" readonly placeholder="Otomatis dihitung"></div>
+<div class="field"><label>STATUS JADWAL</label><div id="blowerStatus" class="tag">Belum ada tanggal</div></div>
+</div>
+<label style="display:block;margin-top:10px">KETERANGAN PEMERIKSAAN BLOWER</label><textarea id="blowerDesc" placeholder="Kondisi blower, debu, suara, dan hasil pembersihan..."></textarea>
+<label style="display:block;margin-top:8px">NOTE JIKA TERTUNDA</label><textarea id="blowerNote" placeholder="Alasan tertunda dan rencana tindak lanjut..."></textarea>
+</div>
+<div class="row"><div class="field"><label>CATATAN UMUM / TINDAK LANJUT</label><textarea id="generalNote" placeholder="Catatan tambahan pemeriksaan..."></textarea></div><div class="field"><label>DIPERIKSA OLEH / PARAF</label><input id="inspector" placeholder="Nama pemeriksa / paraf"></div></div>
+<div class="actions"><button class="btn primary" id="saveInspection">Simpan Pemeriksaan</button><button class="btn" id="resetInspection">Kosongkan Form</button></div>
+</div>
+</section>
+<section id="projects" class="page hidden">
+<div class="card"><h2 class="section-title">Project Maintenance Selanjutnya</h2><p class="small muted">Semua project dari kedua jenis mesin dikumpulkan di sini agar mudah dicari tanpa membuka halaman mesin satu per satu.</p>
+<div class="row"><div class="field"><label>JENIS MESIN</label><select id="projectMachine"><option>Semua Mesin</option><option>LUNCH BOX 1</option><option>LUNCH BOX 2</option><option>LUNCH BOX 3</option><option>LUNCH BOX 4</option><option>LUNCH BOX 5</option><option>LUNCH BOX 6</option><option>LUNCH BOX 7</option><option>LUNCH BOX 8</option><option>LUNCH BOX 9</option><option>LUNCH BOX 10</option><option>LUNCH BOX 11</option><option>FORMING BOX 1</option><option>FORMING BOX 2</option><option>FORMING BOX 3</option><option>FORMING TRAY 1</option><option>FORMING TRAY 2</option><option>FORMING EREKTING 1</option><option>MESIN SEKAT 1</option><option>MESIN SEKAT 2</option><option>MESIN SEKAT 3</option><option>MESIN SEKAT 4</option><option>MESIN SEKAT 5</option><option>DEBAO 1</option><option>RUIDA 1</option><option>RUIDA 2</option><option>MINGGUO 1</option><option>MINGGUO 2</option><option>MINGGUO 3</option><option>MINGGUO 4</option></select></div><div class="field"><label>NAMA PROJECT</label><input id="projectTitle" placeholder="Contoh: Perbaikan jalur heater"></div><div class="field"><label>TARGET MAINTENANCE</label><input type="date" id="projectDate"></div></div>
+<label style="display:block;margin-top:10px">DETAIL PROJECT / PEKERJAAN</label><textarea id="projectDetail" placeholder="Jelaskan pekerjaan yang akan dilakukan..."></textarea>
+<label style="display:block;margin-top:8px">STATUS</label><select id="projectStatus"><option>Belum Dikerjakan</option><option>Sedang Dikerjakan</option><option>Selesai</option></select>
+<div class="actions"><button class="btn primary" id="addProject">Tambah Project</button></div>
+</div><div class="card"><div class="row" style="justify-content:space-between"><h2 class="section-title">Daftar Project Maintenance</h2><select id="projectFilter" style="max-width:180px"><option>Semua Mesin</option><option>LUNCH BOX</option><option>MESIN SEKAT</option><option>DEBAO</option><option>RUIDA</option><option>MINGGUO</option></select></div><div id="projectList"></div></div>
+</section>
+<section id="supplies" class="page hidden">
+<div class="card"><h2 class="section-title">Barang yang Harus Disiapkan</h2><div class="row"><div class="field"><label>UNTUK MESIN</label><select id="supplyMachine"><option>Keduanya</option><option>LUNCH BOX</option><option>FORMING BOX</option><option>FORMING TRAY</option><option>FORMING EREKTING</option><option>MESIN SEKAT</option><option>DEBAO</option><option>RUIDA</option><option>MINGGUO</option></select></div><div class="field"><label>NAMA BARANG / SPAREPART</label><input id="supplyName" placeholder="Nama barang"></div><div class="field"><label>JUMLAH</label><input id="supplyQty" placeholder="Contoh: 2 pcs"></div></div>
+<label style="display:block;margin-top:10px">KETERANGAN / SPESIFIKASI</label><textarea id="supplyDesc" placeholder="Ukuran, tipe, part number, atau kegunaan..."></textarea>
+<label style="display:block;margin-top:8px">NOTE JIKA TERTUNDA</label><textarea id="supplyNote" placeholder="Belum dibeli, menunggu barang datang, dan sebagainya..."></textarea>
+<div class="row" style="margin-top:10px"><div class="field"><label>STATUS PERSIAPAN</label><select id="supplyStatus"><option>Belum Disiapkan</option><option>Proses Pembelian</option><option>Sudah Siap</option></select></div></div>
+<div class="actions"><button class="btn primary" id="addSupply">Tambah Barang</button></div></div>
+<div class="card"><h2 class="section-title">Daftar Persiapan Barang</h2><div id="supplyList"></div></div>
+</section>
+<section id="records" class="page hidden"><div class="card"><h2 class="section-title">Riwayat Pemeriksaan</h2><div class="row"><div class="field"><label>FILTER JENIS MESIN</label><select id="recordFilter"><option>Semua Mesin</option><option>LUNCH BOX</option><option>FORMING BOX</option><option>FORMING TRAY</option><option>FORMING EREKTING</option><option>MESIN SEKAT</option><option>DEBAO</option><option>RUIDA</option><option>MINGGUO</option></select></div><div class="field"><label>FILTER BULAN</label><input type="month" id="recordMonth"></div></div><div id="recordList" style="margin-top:12px"></div></div></section>
+<footer>Monitoring Maintenance Mesin · Data tersimpan pada browser/perangkat ini (local storage).</footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://iphiolhqpaxhiwwigxyl.supabase.co";
+const SUPABASE_KEY="sb_publishable_bNjEu-tOspwFelkM2CFo7A_Ds9349Kg";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=id=>document.getElementById(id);
+const KEY='maintenanceLunchBoxSekat_v1';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"records":[],"projects":[],"supplies":[]}');
+let currentMachine='LUNCH BOX';
+const fleet={
+'LUNCH BOX':Array.from({length:11},(_,i)=>`LUNCH BOX ${i+1}`),
+'FORMING BOX':Array.from({length:3},(_,i)=>`FORMING BOX ${i+1}`),
+'FORMING TRAY':Array.from({length:2},(_,i)=>`FORMING TRAY ${i+1}`),
+'FORMING EREKTING':['FORMING EREKTING 1'],
+'MESIN SEKAT':Array.from({length:5},(_,i)=>`MESIN SEKAT ${i+1}`),
+'DEBAO':['DEBAO 1'],
+'RUIDA':Array.from({length:2},(_,i)=>`RUIDA ${i+1}`),
+'MINGGUO':Array.from({length:4},(_,i)=>`MINGGUO ${i+1}`)
+};
+const allMachines=Object.values(fleet).flat();
+const defs={
+'LUNCH BOX':[
+{title:'KEBERSIHAN PENDINGIN',items:['Kipas panel','Kipas mesin']},
+{title:'KEBERSIHAN KOMPONEN',items:['Inverter','PLC']},
+{title:'KERAPIAN JALUR HEATER',items:['Jalur heater']},
+{title:'OLI',items:['Pelumasan oli bagian gear','Pelumasan oli bagian rantai']}
+],
+'MESIN SEKAT':[
+{title:'KEBERSIHAN PENDINGIN',items:['Kipas panel','Kipas mesin']},
+{title:'KEBERSIHAN KOMPONEN',items:['HF','Inverter','PLC']},
+{title:'KERAPIAN JALUR HEATER',items:['Jalur heater']},
+{title:'OLI DAN SILICONE',items:['Kelancaran dan kebersihan oli','Kelancaran motor silicone','Usia motor silicone']}
+]};
+defs['FORMING BOX']=JSON.parse(JSON.stringify(defs['LUNCH BOX']));
+defs['FORMING TRAY']=JSON.parse(JSON.stringify(defs['LUNCH BOX']));
+defs['FORMING EREKTING']=JSON.parse(JSON.stringify(defs['LUNCH BOX']));
+const ultrasonicChecklist=[
+{title:'KEBERSIHAN PENDINGIN',items:['Kipas panel','Kipas mesin']},
+{title:'KEBERSIHAN KOMPONEN',items:['Box ultrasonic','Inverter','PLC']},
+{title:'KERAPIAN JALUR HEATER',items:['Jalur heater']},
+{title:'OLI DAN SILICONE',items:['Kelancaran dan kebersihan oli','Kelancaran motor silicone','Usia motor silicone']}
+];
+defs['DEBAO']=JSON.parse(JSON.stringify(ultrasonicChecklist));
+defs['RUIDA']=JSON.parse(JSON.stringify(ultrasonicChecklist));
+defs['MINGGUO']=JSON.parse(JSON.stringify(ultrasonicChecklist));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let cloudSaving=false;
+async function save(){
+  localStorage.setItem(KEY,JSON.stringify(db));
+  renderAll();
+  const status=$('cloudStatus');
+  try{
+    cloudSaving=true;
+    if(status)status.textContent='☁ Menyimpan ke Supabase...';
+    const {error}=await supabaseClient.from('maintenance_mesin_data').upsert({
+      id:'main',
+      records:db.records,
+      projects:db.projects,
+      supplies:db.supplies,
+      updated_at:new Date().toISOString()
+    },{onConflict:'id'});
+    if(error)throw error;
+    if(status)status.textContent='☁ Online · Data tersimpan di Supabase';
+  }catch(err){
+    console.error('Supabase save error:',err);
+    if(status)status.textContent='⚠ Gagal menyimpan online: '+(err.message||'Periksa SQL / koneksi');
+    alert('Data tersimpan di perangkat, tetapi gagal dikirim ke Supabase. Periksa koneksi dan SQL Supabase.\n\n'+(err.message||''));
+  }finally{cloudSaving=false}
+}
+async function loadSupabaseData(){
+  const status=$('cloudStatus');
+  try{
+    if(status)status.textContent='☁ Mengambil data dari Supabase...';
+    const {data,error}=await supabaseClient.from('maintenance_mesin_data')
+      .select('records,projects,supplies').eq('id','main').maybeSingle();
+    if(error)throw error;
+    if(data){
+      db={
+        records:Array.isArray(data.records)?data.records:[],
+        projects:Array.isArray(data.projects)?data.projects:[],
+        supplies:Array.isArray(data.supplies)?data.supplies:[]
+      };
+      localStorage.setItem(KEY,JSON.stringify(db));
+      renderAll();
+    }else{
+      const local=JSON.parse(localStorage.getItem(KEY)||'{"records":[],"projects":[],"supplies":[]}');
+      db=local;
+      const {error:insertError}=await supabaseClient.from('maintenance_mesin_data').upsert({
+        id:'main',records:db.records||[],projects:db.projects||[],supplies:db.supplies||[],updated_at:new Date().toISOString()
+      },{onConflict:'id'});
+      if(insertError)throw insertError;
+    }
+    if(status)status.textContent='☁ Online · Terhubung ke Supabase';
+  }catch(err){
+    console.error('Supabase load error:',err);
+    if(status)status.textContent='⚠ Supabase belum terhubung: '+(err.message||'Periksa SQL / koneksi');
+  }
+}
+function dateAdd(d,m){let x=new Date(d+'T12:00:00');x.setMonth(x.getMonth()+m);return x.toISOString().slice(0,10)}
+function daysDiff(a,b){return Math.ceil((new Date(b+'T12:00:00')-new Date(a+'T12:00:00'))/86400000)}
+function today(){return new Date().toISOString().slice(0,10)}
+$('today').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+$('inspectDate').value=today();$('projectDate').value=today();
+function populateMachineUnits(){
+  const sel=$('machineUnit');
+  const old=sel.value;
+  const units=fleet[currentMachine];
+  const chosen=units.includes(old)?old:units[0];
+  sel.value=chosen;
+  $('machineName').value=chosen;
+  $('machineUnitList').innerHTML=units.map(name=>`<button type="button" class="unit-pick ${name===chosen?'active':''}" data-unit="${esc(name)}">${esc(name)}</button>`).join('');
+  $('machineUnitList').querySelectorAll('[data-unit]').forEach(btn=>btn.addEventListener('click',()=>{
+    sel.value=btn.dataset.unit;
+    $('machineName').value=btn.dataset.unit;
+    $('machineUnitList').querySelectorAll('.unit-pick').forEach(x=>x.classList.toggle('active',x===btn));
+  }));
+}
+
+function renderChecklist(){
+ populateMachineUnits();
+ let out='';
+ defs[currentMachine].forEach((g,gi)=>{out+=`<div class="card"><h3 class="section-title">${g.title}</h3>`;
+ g.items.forEach((it,ii)=>{let id=`${gi}_${ii}`;out+=`<div class="item" data-item="${id}"><div class="item-head"><span class="item-name">${it}</span><span class="small muted">Pilih kondisi</span></div><div class="choices"><button type="button" class="choice selected ok" data-state="OK">OK</button><button type="button" class="choice" data-state="Perlu Perbaikan">Perlu Perbaikan</button><button type="button" class="choice" data-state="Tertunda">Tertunda</button></div><input class="desc" placeholder="Keterangan kondisi / tindakan yang dilakukan"><textarea class="note" placeholder="Note jika ada yang tertunda (alasan dan rencana tindak lanjut)"></textarea></div>`});
+ out+='</div>'});$('checklist').innerHTML=out;
+ $('checklist').querySelectorAll('.choice').forEach(btn=>btn.onclick=()=>{let parent=btn.closest('.item');parent.dataset.state=btn.dataset.state;parent.querySelectorAll('.choice').forEach(b=>b.classList.remove('selected','ok','issue','pending'));btn.classList.add('selected',btn.dataset.state==='OK'?'ok':btn.dataset.state==='Tertunda'?'pending':'issue')});
+ $('checklist').querySelectorAll('.item').forEach(x=>x.dataset.state='OK');
+}
+function updateBlower(){let d=$('blowerDate').value;if(!d){$('blowerDue').value='';$('blowerStatus').textContent='Belum ada tanggal';$('blowerStatus').className='tag';return}
+ let due=dateAdd(d,3);$('blowerDue').value=due;let diff=daysDiff(today(),due);
+ $('blowerStatus').textContent=diff<0?`Terlambat ${Math.abs(diff)} hari`:diff===0?'JATUH TEMPO HARI INI':diff<=14?`Segera jatuh tempo · ${diff} hari lagi`:`Berikutnya ${diff} hari lagi`;
+ $('blowerStatus').className='tag '+(diff<=0?'late':diff<=14?'due':'ok');
+}
+$('blowerDate').addEventListener('change',updateBlower);
+document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-page]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(x=>x.classList.toggle('hidden',x.id!==b.dataset.page));renderAll()});
+document.querySelectorAll('[data-machine]').forEach(b=>b.onclick=()=>{currentMachine=b.dataset.machine;document.querySelectorAll('[data-machine]').forEach(x=>x.classList.toggle('active',x===b));renderChecklist()});
+$('saveInspection').onclick=()=>{
+ let items=[];$('checklist').querySelectorAll('.item').forEach(x=>{let gi=+x.dataset.item.split('_')[0],ii=+x.dataset.item.split('_')[1];items.push({section:defs[currentMachine][gi].title,name:defs[currentMachine][gi].items[ii],status:x.dataset.state||'OK',description:x.querySelector('.desc').value,note:x.querySelector('.note').value})});
+ db.records.unshift({id:Date.now(),machine:currentMachine,machineName:$('machineUnit').value,machineId:$('machineUnit').value,date:$('inspectDate').value,status:$('machineStatus').value,items,blowerDate:$('blowerDate').value,blowerDue:$('blowerDue').value,blowerDesc:$('blowerDesc').value,blowerNote:$('blowerNote').value,generalNote:$('generalNote').value,inspector:$('inspector').value});
+ save();alert('Pemeriksaan berhasil disimpan di perangkat ini.');
+};
+$('resetInspection').onclick=()=>{if(confirm('Kosongkan semua isian form?')){renderChecklist();$('machineName').value=$('machineUnit').value;$('machineStatus').value='Belum Maintenance';$('blowerDate').value='';$('blowerDesc').value='';$('blowerNote').value='';$('generalNote').value='';$('inspector').value='';updateBlower()}};
+$('addProject').onclick=()=>{if(!$('projectTitle').value.trim()){alert('Isi nama project terlebih dahulu.');return}db.projects.unshift({id:Date.now(),machine:$('projectMachine').value,title:$('projectTitle').value,detail:$('projectDetail').value,date:$('projectDate').value,status:$('projectStatus').value});$('projectTitle').value='';$('projectDetail').value='';save()};
+$('addSupply').onclick=()=>{if(!$('supplyName').value.trim()){alert('Isi nama barang terlebih dahulu.');return}db.supplies.unshift({id:Date.now(),machine:$('supplyMachine').value,name:$('supplyName').value,qty:$('supplyQty').value,desc:$('supplyDesc').value,note:$('supplyNote').value,status:$('supplyStatus').value});['supplyName','supplyQty','supplyDesc','supplyNote'].forEach(id=>$(id).value='');save()};
+$('projectFilter').onchange=renderProjects;$('recordFilter').onchange=renderRecords;$('recordMonth').onchange=renderRecords;
+function renderProjects(){let f=$('projectFilter').value,a=db.projects.filter(x=>f==='Semua Mesin'||x.machine===f||String(x.machine).startsWith(f+' '));$('projectList').innerHTML=a.length?a.map(x=>`<div class="project"><div class="list-row"><b>${esc(x.title)}</b><span class="tag ${x.status==='Selesai'?'ok':x.status==='Sedang Dikerjakan'?'due':'late'}">${esc(x.status)}</span></div><div class="small muted">${esc(x.machine)} · Target: ${esc(x.date||'-')}</div><p>${esc(x.detail)}</p><div class="actions"><select onchange="changeProject(${x.id},this.value)"><option ${x.status==='Belum Dikerjakan'?'selected':''}>Belum Dikerjakan</option><option ${x.status==='Sedang Dikerjakan'?'selected':''}>Sedang Dikerjakan</option><option ${x.status==='Selesai'?'selected':''}>Selesai</option></select><button class="btn danger" onclick="delItem('projects',${x.id})">Hapus</button></div></div>`).join(''):'<div class="empty">Belum ada project maintenance.</div>'}
+function renderSupplies(){$('supplyList').innerHTML=db.supplies.length?db.supplies.map(x=>`<div class="item"><div class="item-head"><b>${esc(x.name)} · ${esc(x.qty||'Jumlah belum diisi')}</b><span class="tag ${x.status==='Sudah Siap'?'ok':x.status==='Proses Pembelian'?'due':'late'}">${esc(x.status)}</span></div><div class="small muted">${esc(x.machine)}</div><p>${esc(x.desc)}</p><p class="small">Note: ${esc(x.note||'-')}</p><div class="actions"><select onchange="changeSupply(${x.id},this.value)"><option ${x.status==='Belum Disiapkan'?'selected':''}>Belum Disiapkan</option><option ${x.status==='Proses Pembelian'?'selected':''}>Proses Pembelian</option><option ${x.status==='Sudah Siap'?'selected':''}>Sudah Siap</option></select><button class="btn danger" onclick="delItem('supplies',${x.id})">Hapus</button></div></div>`).join(''):'<div class="empty">Belum ada barang yang dicatat.</div>'}
+function renderRecords(){let f=$('recordFilter').value,m=$('recordMonth').value,a=db.records.filter(x=>(f==='Semua Mesin'||x.machine===f)&&(!m||x.date.startsWith(m)));$('recordList').innerHTML=a.length?a.map(x=>`<div class="item"><div class="item-head"><b>${esc(x.machine)} · ${esc(x.machineName||'Nama mesin belum diisi')}</b><span class="tag ${x.status==='Sudah Maintenance'?'ok':x.status==='Perbaikan'?'late':'due'}">${esc(x.status)}</span></div><div class="small muted">${esc(x.date)} · Pemeriksa: ${esc(x.inspector||'-')}</div><p class="small">${x.items.map(i=>`${esc(i.name)}: ${esc(i.status)}${i.description?' — '+esc(i.description):''}${i.note?' | Note: '+esc(i.note):''}`).join('<br>')}</p><p class="small">Blower: ${esc(x.blowerDate||'Belum diisi')} → ${esc(x.blowerDue||'-')} · ${esc(x.blowerNote||'')}</p><p class="small">${esc(x.generalNote)}</p><button class="btn danger" onclick="delRecord(${x.id})">Hapus Riwayat</button></div>`).join(''):'<div class="empty">Tidak ada riwayat untuk filter ini.</div>'}
+function delItem(type,id){if(confirm('Hapus data ini?')){db[type]=db[type].filter(x=>x.id!==id);save()}}
+function delRecord(id){if(confirm('Hapus riwayat pemeriksaan ini?')){db.records=db.records.filter(x=>x.id!==id);save()}}
+function changeProject(id,v){let x=db.projects.find(x=>x.id===id);if(x){x.status=v;save()}}
+function changeSupply(id,v){let x=db.supplies.find(x=>x.id===id);if(x){x.status=v;save()}}
+function openMachineFromDashboard(machineName){
+  const group=Object.keys(fleet).find(g=>fleet[g].includes(machineName));
+  if(!group)return;
+  currentMachine=group;
+  document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page==='inspection'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('hidden',p.id!=='inspection'));
+  document.querySelectorAll('[data-machine]').forEach(b=>b.classList.toggle('active',b.dataset.machine===group));
+  renderChecklist();
+  $('machineUnit').value=machineName;
+  populateMachineUnits();
+  $('machineName').value=machineName;
+  $('inspectDate').value=today();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderDashboard(){
+ let latest={};db.records.forEach(r=>{let key=r.machineId||r.machineName||r.machine;if(!latest[key]||r.id>latest[key].id)latest[key]=r});
+ let arr=Object.values(latest);
+ $('countRepair').textContent=arr.filter(x=>x.status==='Perbaikan').length;
+ $('countNot').textContent=arr.filter(x=>x.status==='Belum Maintenance').length;
+ $('countDone').textContent=arr.filter(x=>x.status==='Sudah Maintenance').length;
+ let due=arr.filter(x=>x.blowerDue&&x.blowerDue<=dateAdd(today(),14));$('countBlower').textContent=due.length;
+ $('dashboardMachines').innerHTML=Object.entries(fleet).map(([group,names])=>`<div class="machine-group-title"><b>${esc(group)} (${names.length} mesin)</b><span>Pilih mesin untuk pemeriksaan</span></div>`+names.map(name=>{
+  let x=latest[name];return `<div class="list-row dashboard-machine" role="button" tabindex="0" data-open-machine="${esc(name)}" aria-label="Buka pemeriksaan ${esc(name)}"><div><b>${esc(name)}</b><div class="small muted">${x?`Terakhir: ${esc(x.date)}`:'Belum ada pemeriksaan'}</div></div><span class="tag ${!x?'due':x.status==='Sudah Maintenance'?'ok':x.status==='Perbaikan'?'late':'due'}">${x?esc(x.status):'Belum Maintenance'}</span><span class="machine-open">BUKA ›</span></div>`
+  }).join('')).join('');
+  $('dashboardMachines').querySelectorAll('[data-open-machine]').forEach(el=>{
+    const open=()=>openMachineFromDashboard(el.dataset.openMachine);
+    el.addEventListener('click',open);
+    el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
+  });
+  $('blowerAlerts').innerHTML=allMachines.map(name=>{let x=latest[name];if(!x)return '';let diff=x.blowerDue?daysDiff(today(),x.blowerDue):null;return `<div class="list-row"><div><b>${esc(name)}</b><div class="small muted">Jadwal blower: ${esc(x.blowerDue||'Belum ditentukan')}</div></div><span class="tag ${diff===null?'due':diff<=0?'late':diff<=14?'due':'ok'}">${diff===null?'Belum ada tanggal':diff<0?'Terlambat '+Math.abs(diff)+' hari':diff===0?'Jatuh tempo hari ini':diff<=14?'Segera · '+diff+' hari':'Terjadwal'}</span></div>`}).join('')||'<div class="empty">Belum ada jadwal blower.</div>';
+ $('dashboardProjects').innerHTML=db.projects.filter(x=>x.status!=='Selesai').slice(0,5).map(x=>`<div class="list-row"><div><b>${esc(x.title)}</b><div class="small muted">${esc(x.machine)} · ${esc(x.date||'-')}</div></div><span class="tag due">${esc(x.status)}</span></div>`).join('')||'<div class="empty">Tidak ada project tertunda.</div>';
+}
+function renderAll(){renderDashboard();renderProjects();renderSupplies();renderRecords()}
+renderChecklist();updateBlower();renderAll();loadSupabaseData();
+</script></body></html>
